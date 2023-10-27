@@ -1,51 +1,137 @@
-
-// import axios from "axios";
-
-// axios.defaults.headers.common["x-api-key"] = "live_vHQe36pHRTLs0QD5mvEAHeklHDj7vC1421nryMAZQDOGH4LbNKgPPgMpTLXw4t2t";
-
-// function finderCats () {
-//     const BASE_URL = 'https://api.thecatapi.com/v1/breeds';
-//     const API_KEY = 'live_vHQe36pHRTLs0QD5mvEAHeklHDj7vC1421nryMAZQDOGH4LbNKgPPgMpTLXw4t2t';
-
-// return fetch(`${BASE_URL}__${API_KEY}`).then(resp => {
-//     console.log(resp);
-// })
-// }
-
 import axios from "axios";
+import { fetchBreeds, fetchCatByBreed } from "./cat-api";
+import SlimSelect from "slim-select";
+import Notiflix from 'notiflix';
 
-// Встановіть ключ доступу
 axios.defaults.headers.common["x-api-key"] = "live_vHQe36pHRTLs0QD5mvEAHeklHDj7vC1421nryMAZQDOGH4LbNKgPPgMpTLXw4t2t";
 
-// Функція для отримання списку порід
-export function fetchBreeds() {
-  return axios
-    .get("https://api.thecatapi.com/v1/breeds")
-    .then((response) => {
-      // Розпакуємо дані про породи
-      const breeds = response.data;
 
-      // Створимо масив опцій для вибору порід
-      const breedOptions = breeds.map((breed) => ({
-        value: breed.id,
-        label: breed.name,
-      }));
+breedSelect.addEventListener('change', () => {
+  const selectedBreedId = breedSelect.value;
 
-      return breedOptions;
+  const loader = document.querySelector('.loader');
+  loader.classList.add('visible');
+
+  if (selectedBreedId) {
+    fetchCatByBreed(selectedBreedId)
+    .then(catData => {
+      catInfoDiv.innerHTML = `
+      <img src="${catData.url}" alt="Зображення кота">
+      <h2>Назва породи: ${catData.breeds[0].name}</h2>
+      <p>Опис: ${catData.breeds[0].description}</p>
+      <p>Темперамент: ${catData.breeds[0].temperament}</p>
+      `;
     })
-    .catch((error) => {
-      console.error("Помилка при завантаженні порід котів:", error);
-      throw error; // Прокинемо помилку для обробки її вище
+    .catch(error => {
+      console.error('Помилка при отриманні даних про кота', error);
+    })
+    .finally(() => {
+      loader.classList.remove('visible');
+    });      
+  } else {
+    catInfoDiv.innerHTML = '';
+    loader.classList.remove('visible')
+  }
+});
+
+
+// const options = {
+//   headers: {
+//     'x-api-key' : 'live_vHQe36pHRTLs0QD5mvEAHeklHDj7vC1421nryMAZQDOGH4LbNKgPPgMpTLXw4t2t'
+//   }
+// }
+// fetch(`https://api.thecatapi.com/v1/images/search?breed_ids=abys`, options)
+
+
+// const breedSelect = document.querySelector('.breed-select');
+// const catInfoDiv = document.querySelector('.cat-info');
+
+const breedSelect = new SlimSelect({
+  select: '#breed-select',
+  placeholder: 'Оберіть породу'
+});
+breedSelect.onChange = () => {
+  const selectedBreedId = breedSelect.selected();
+
+  const loader = document.querySelector('.loader');
+
+  loader.style.display = 'block';
+
+  if (selectedBreedId) {
+    fetchCatByBreed(selectedBreedId)
+      .then(catData => {
+        const catInfoDiv = document.querySelector('.cat-info');
+        const breedName = document.querySelector('#breed-name');
+        const breedDescription = document.querySelector('#breed-description');
+        const breedTemperament = document.querySelector('#breed-temperament');
+        
+        // Отримано дані про кота, відобразіть їх на сторінці
+        catInfoDiv.style.display = 'block';
+        breedName.textContent = catData.breeds[0].name;
+        breedDescription.textContent = catData.breeds[0].description;
+        breedTemperament.textContent = catData.breeds[0].temperament;
+      })
+      .catch(error => {
+        // Відобразити помилку за допомогою Notiflix
+        Notiflix.Report.failure('Помилка', 'Сталася помилка під час запиту.');
+        console.error('Помилка при отриманні даних про кота: ', error);
+      })
+      .finally(() => {
+        // Приховати завантажувач, коли запит завершено
+        loader.style.display = 'none';
+      });
+  } else {
+    // Сховайте інформацію про кота, якщо не обрана порода
+    const catInfoDiv = document.querySelector('.cat-info');
+    catInfoDiv.style.display = 'none';
+    // Приховати завантажувач, коли запит завершено
+    loader.style.display = 'none';
+  }
+};
+fetchBreeds() 
+  .then(breeds => {
+    
+    breeds.forEach(breed => {
+      breedSelect.data.add({
+         text: breed.name,
+         value: breed.id  
+      });
     });
-}
+  })
+  .catch(error => {
+    Notiflix.Report.Failure('Помилка', 'Сталася помилка під час завантаження списку порід.');
+    console.error('Помилка при завантаженні порід: ', error);
+  });
 
-// import { fetchBreeds } from "./cat-api.js";
 
-// fetchBreeds()
-//   .then((breeds) => {
-//     // Використовуйте масив порід, наприклад, для заповнення вибору на сторінці
-//     console.log(breeds);
-//   })
-//   .catch((error) => {
-//     // Обробка помилок, якщо є
-//   });
+
+
+
+
+
+
+  // const BASE_URL = 'https://api.thecatapi.com/v1';
+  // const API_KEY = 'live_vHQe36pHRTLs0QD5mvEAHeklHDj7vC1421nryMAZQDOGH4LbNKgPPgMpTLXw4t2t';
+  // return fetch(`${BASE_URL}/breeds`).then(resp => {
+  //   if (!resp.ok) {
+  //     throw new Error(resp.statusText)
+  //   }
+  //   return resp.json()
+  // })
+// fetchBreeds();
+// .then(data => console.log(data))
+// .catch(err => console.log(err))
+
+
+// https://api.thecatapi.com/v1/images/search?breed_ids=ідентифікатор_породи //
+
+
+
+
+
+
+
+
+
+
+
