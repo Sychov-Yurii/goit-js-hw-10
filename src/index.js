@@ -1,4 +1,4 @@
-import { fetchBreeds, fetchCatByBreed } from "./cat-api.js";
+import { fetchBreeds, fetchCatByBreed } from "./js/cat-api";
 import SlimSelect from 'slim-select';
 import 'slim-select/dist/slimselect.css';
 import Notiflix from "notiflix";
@@ -13,7 +13,6 @@ const error = document.querySelector('.error');
 const catInformation = document.querySelector('.cat-info');
 
 error.classList.add('is-hidden');
-// selector.style.display = 'none';
 error.style.display = 'none';
 
 function getPetsList(breed) {
@@ -24,6 +23,7 @@ function getPetsList(breed) {
 function fetchBreedsAndSetPetsList() {
   fetchBreeds()
     .then(result => {
+      selector.classList.remove("is-hidden")
       getPetsList(result);
     })
     .then(() => new SlimSelect({ select: `.breed-select` }))
